@@ -47,7 +47,7 @@ function populateGui(elements,project,dataprocessingblock)
     catch
         selSens=elements.dropdown.String;
     end
-    
+
     for i=1:length(project.currentCluster.sensors)
         sensor = project.currentCluster.sensors(1, i);
         if strcmp(sensor.caption,selSens)
@@ -60,62 +60,66 @@ function populateGui(elements,project,dataprocessingblock)
     setGroup(~isnan(setGroup))=1;
     setGroup(isnan(setGroup))=0;
     setGroup=logical(setGroup);
-    
+
     allData=newsensor.data;
     redDat=allData(setGroup,:);
 
     x1 = 1:1:newsensor.cluster.nCyclePoints;
     x = x1.*newsensor.cluster.samplingPeriod;
-    
+
 %     plot(elements.hAx,x,redDat(1,:));
 %     xlabel(elements.hAx,'time');
 %     ylabel(elements.hAx,'data a.u.');
 %     
     minfill=min(redDat(:))-5e3;
     maxfill=max(redDat(:))+5e3;
-    
-    dpbmean=newsensor.featureDefinitionSet.featureDefinitions.getByCaption('mean').dataProcessingBlock;
-    iPosmean=dpbmean.parameters.getByCaption('iPos').value;
-    
-    featCap=project.currentModel.fullModelData.featureCaptions;
-    indMean = find(contains(featCap,'mean')&contains(featCap,selSens));
-    
-    selMean=project.currentModel.fullModelData.featureSelection(indMean(1):indMean(end))';
-    selR1=iPosmean(selMean,:).*newsensor.cluster.samplingPeriod;
-    
-    xfillm=[selR1(:,1),selR1(:,2),selR1(:,2),selR1(:,1)]';
-    yfill=[minfill,minfill,maxfill,maxfill]';
+
     f.EdgeColor=[0.5 0.5 0.5];
+    featCap=project.currentModel.fullModelData.featureCaptions;
+    yfill=[minfill,minfill,maxfill,maxfill]';
+
     try
+        dpbmean=newsensor.featureDefinitionSet.featureDefinitions.getByCaption('mean').dataProcessingBlock;
+        iPosmean=dpbmean.parameters.getByCaption('iPos').value;
+
+        indMean = find(contains(featCap,'mean')&contains(featCap,selSens));
+
+        selMean=project.currentModel.fullModelData.featureSelection(indMean(1):indMean(end))';
+        selR1=iPosmean(selMean,:).*newsensor.cluster.samplingPeriod;
+
+        xfillm=[selR1(:,1),selR1(:,2),selR1(:,2),selR1(:,1)]';
+
         f=fill(elements.hAx,xfillm,yfill,[1 1 .6]);
         hold(elements.hAx,'on');
     end
- 
-    dpbpoly=newsensor.featureDefinitionSet.featureDefinitions.getByCaption('polyfit').dataProcessingBlock;
-    iPospoly=dpbpoly.parameters.getByCaption('iPos').value;
-    
-    indPoly = find(contains(featCap,'polyfit')&contains(featCap,selSens));
-    
-    selPoly=project.currentModel.fullModelData.featureSelection(indPoly(1):indPoly(end))';
-    selR2=iPospoly(selPoly,:).*newsensor.cluster.samplingPeriod; 
 
-    xfillp=[selR2(:,1),selR2(:,2),selR2(:,2),selR2(:,1)]';
     try
+        dpbpoly=newsensor.featureDefinitionSet.featureDefinitions.getByCaption('polyfit').dataProcessingBlock;
+        iPospoly=dpbpoly.parameters.getByCaption('iPos').value;
+
+        indPoly = find(contains(featCap,'polyfit')&contains(featCap,selSens));
+
+        selPoly=project.currentModel.fullModelData.featureSelection(indPoly(1):indPoly(end))';
+        selR2=iPospoly(selPoly,:).*newsensor.cluster.samplingPeriod; 
+
+        xfillp=[selR2(:,1),selR2(:,2),selR2(:,2),selR2(:,1)]';
+
         f=fill(elements.hAx,xfillp,yfill,[1 .6 .6]);
         %f.EdgeColor=[.5 .5 .5];
         hold(elements.hAx,'on');
     end
-    
-    [~,row,~] = intersect(selR1(:,1),selR2(:,1));    
-    selR3=iPosmean(selMean,:).*newsensor.cluster.samplingPeriod;
-    selR3=selR3(row,:);
 
-    xfillmp=[selR3(:,1),selR3(:,2),selR3(:,2),selR3(:,1)]';
     try
+        [~,row,~] = intersect(selR1(:,1),selR2(:,1));
+        selR3=iPosmean(selMean,:).*newsensor.cluster.samplingPeriod;
+        selR3=selR3(row,:);
+
+        xfillmp=[selR3(:,1),selR3(:,2),selR3(:,2),selR3(:,1)]';
+
         f=fill(elements.hAx,xfillmp,yfill,[0 1 0]);
     end
     %f.EdgeColor=[.5 .5 .5];
-    
+
     plot(elements.hAx,x,redDat(1,:),'color','b');
     xlabel(elements.hAx,'time');
     ylabel(elements.hAx,'data a.u.');
