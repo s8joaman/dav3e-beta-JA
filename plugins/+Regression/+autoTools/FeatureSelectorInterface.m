@@ -28,8 +28,20 @@ classdef FeatureSelectorInterface < handle
         rank = [];
         nFeat = [];
         err = [];
-        RegrOrClass = [];
-        classifier = 'LDA';
+        nComp = [];
+        beta0 = [];
+        offset = [];
+        projectedData = [];
+        classifier = [];
+        criterion = [];
+        Validation = [];
+        groupbasedVal = [];
+        groupingVal = [];
+        Testing = [];
+        groupbasedTest = [];
+        groupingTest = [],
+        percentTest = [];
+        groupsTest = [];
     end
     
     methods

@@ -18,7 +18,7 @@
 % You should have received a copy of the GNU Affero General Public License
 % along with this program.  If not, see <http://www.gnu.org/licenses/>. 
 
-function info = plsr()
+function info = Helpplsr()
     info.type = DataProcessingBlockTypes.Regression;
     info.caption = 'PLS regression';
     info.shortCaption = mfilename;
@@ -83,11 +83,11 @@ function [data,params] = apply(data,params,rank)
     end 
 end
 
-function params = train(data, params, rank)
+function params = train(data, target, params)
     % if we are trained and train data is as before, we can completely skip
     % the training
     try
-        if params.trained ...
+            if params.trained ...
             && all(size(params.lastTrainData)==size(data.getSelectedData())) ...
             && all(all(params.lastTrainData == data.getSelectedData())) ...
             && size(params.beta0,2) >= params.nComp
@@ -95,21 +95,6 @@ function params = train(data, params, rank)
         return
         end
     catch
-    end
-    
-    if exist('rank','var')
-        target = cat2num(data.target(data.trainingSelection));
-        help = single(data.data(data.trainingSelection,:));
-        d = help(:,rank);
-        nComp = params.nComp;
-        if params.nComp > size(d,2)
-            % warning('nComp > number of features');
-            nComp = size(d,2);
-        end
-    else
-        target = data.getSelectedTarget();
-        d = data.getSelectedData();
-        nComp = params.nComp;
     end
     
     if ~isnumeric(target) || any(isnan(target))
@@ -122,6 +107,12 @@ function params = train(data, params, rank)
         error('PLSR requires more observations than components.');
     end
     
+    d = data;
+    nComp = params.nComp;
+    if params.nComp > size(d,2)
+        % warning('nComp > number of features');
+        nComp = size(d,2);
+    end
     nans = isnan(d);
     if any(any(nans))
         warning('%d feature values were NaN and have been replaced with 0.',sum(sum(nans)));
@@ -136,7 +127,7 @@ function params = train(data, params, rank)
         % use this slower alternative instead
         b = zeros(size(d,2)+1,nComp);
         for i = 1:nComp
-            [~,~,~,~,beta] = plsregress(d,target,i);
+            [~,~,~,~,beta,~,~,h] = plsregress(d,target,i);
             b(:,i) = beta;
         end
         o = b(1,:);
@@ -144,6 +135,7 @@ function params = train(data, params, rank)
     end
     params.beta0 = b;
     params.offset = o;
+    params.weights = h.W;
     params.trained = true;
 end
 

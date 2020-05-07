@@ -18,7 +18,7 @@
 % You should have received a copy of the GNU Affero General Public License
 % along with this program.  If not, see <http://www.gnu.org/licenses/>. 
 
-function [panel,updateFun] = coefficients(parent,project,dataprocessingblock)
+function [panel,updateFun] = error3D(parent,project,dataprocessingblock)
     [panel,elements] = makeGui(parent);
     populateGui(elements,project,dataprocessingblock);
     updateFun = @()populateGui(elements,project,dataprocessingblock);
@@ -27,6 +27,9 @@ end
 function [panel,elements] = makeGui(parent)
     panel = uipanel(parent);
     hAx = axes(panel); title('');
+%     xlabel('nFeatures'); 
+%     ylabel('nComp.PLSR');
+%     zlabel('RMSE');
     box on,
     set(gca,'LooseInset',get(gca,'TightInset')) % https://undocumentedmatlab.com/blog/axes-looseinset-property
     elements.hAx = hAx;
@@ -34,27 +37,16 @@ end
 
 function populateGui(elements,project,dataprocessingblock)
     cla(elements.hAx,'reset');
-    if ~dataprocessingblock.parameters.getByCaption('trained').value
-        return
+    errorT = dataprocessingblock.parameters.getByCaption('error').value.training(:,:);
+    errorV = dataprocessingblock.parameters.getByCaption('error').value.validation(:,:);
+    if isempty(errorV)
+        errorV=[0];
     end
-    try 
-        coeffs = dataprocessingblock.parameters.getByCaption('beta0').getValue();
-        coeffs = coeffs(:,end);
+    try
+        mesh(elements.hAx,errorV');
     end
-    if isempty(coeffs)
-        return
-    end
-    featCap = project.currentModel.fullModelData.featureCaptions;
-    [~,idx] = sort(abs(coeffs),'descend');
-    coeffs = coeffs(idx);
-    featCap = cellstr(featCap(idx));
-    X = categorical(featCap);
-    X = reordercats(X,featCap);
-    bar(elements.hAx,X,coeffs);
-    set(elements.hAx,'TickLabelInterpreter','none');
-    
-    %set(elements.hAx,'XTickLabel',featCap);
-    xtickangle(elements.hAx,20);
-    xlabel('feature');
-    ylabel('coefficient / a.u.')
+    xlabel(elements.hAx,'nComp.PLSR');
+    ylabel(elements.hAx,'nFeatures'); 
+    zlabel(elements.hAx,'RMSE');
+    set(elements.hAx, 'View', [120 20]);
 end
