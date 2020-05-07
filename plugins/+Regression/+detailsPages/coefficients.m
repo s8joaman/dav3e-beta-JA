@@ -37,8 +37,10 @@ function populateGui(elements,project,dataprocessingblock)
     if ~dataprocessingblock.parameters.getByCaption('trained').value
         return
     end
-    coeffs = dataprocessingblock.parameters.getByCaption('beta0').getValue();
-    coeffs = coeffs(:,end);
+    try 
+        coeffs = dataprocessingblock.parameters.getByCaption('beta0').getValue();
+        coeffs = coeffs(:,end);
+    end
     if isempty(coeffs)
         return
     end

@@ -38,36 +38,80 @@ function info = plsr()
     info.requiresNumericTarget = true;
 end
 
-function [data,params] = apply(data,params)
+function [data,params] = apply(data,params,rank)
     if ~params.trained
         error('Regressor must first be trained.');
     end
-    b = params.beta0(:,params.nComp);
-    o = params.offset(params.nComp);
-    pred = data.getSelectedData() * b + o;
+    
+    if exist('rank','var') 
+        if strcmp(data.mode, 'training')
+            help = single(data.data(data.trainingSelection,:));
+            dataH = help(:,rank);
+        elseif strcmp(data.mode, 'validation')
+            help = single(data.data(data.validationSelection,:));
+            dataH = help(:,rank);
+        elseif strcmp(data.mode, 'testing')
+            dataH = [];
+        end
+        nComp = params.nComp;
+        if params.nComp > size(dataH,2)
+            % warning('nComp > number of features');
+            nComp = size(dataH,2);
+        end
+        b = params.beta0(:,nComp);
+        o = params.offset(nComp);
+        pred = dataH * b + o;
+        params.pred = pred;
+
+    else
+        b = params.beta0(:,params.nComp);
+        o = params.offset(params.nComp);
+        pred = data.getSelectedData() * b + o;
+    end
     
     switch data.mode
         case 'training'
             params.projectedData.training = pred;
         case 'testing'
             params.projectedData.testing = pred;
-    end    
+    end
     
-    data.setSelectedPrediction(pred);
+    try
+        data.setSelectedPrediction(pred);
+    catch
+        params.pred = pred;
+    end 
 end
 
-function params = train(data,params)
+function params = train(data, params, rank)
     % if we are trained and train data is as before, we can completely skip
     % the training
-    if params.trained ...
+    try
+        if params.trained ...
             && all(size(params.lastTrainData)==size(data.getSelectedData())) ...
             && all(all(params.lastTrainData == data.getSelectedData())) ...
             && size(params.beta0,2) >= params.nComp
-        disp('PLSR already trained.')
+            disp('PLSR already trained.')
         return
+        end
+    catch
     end
     
-    target = data.getSelectedTarget();
+    if exist('rank','var')
+        target = cat2num(data.target(data.trainingSelection));
+        help = single(data.data(data.trainingSelection,:));
+        d = help(:,rank);
+        nComp = params.nComp;
+        if params.nComp > size(d,2)
+            % warning('nComp > number of features');
+            nComp = size(d,2);
+        end
+    else
+        target = data.getSelectedTarget();
+        d = data.getSelectedData();
+        nComp = params.nComp;
+    end
+    
     if ~isnumeric(target) || any(isnan(target))
         error('PLSR requires numeric target.');
     end
@@ -78,7 +122,6 @@ function params = train(data,params)
         error('PLSR requires more observations than components.');
     end
     
-    d = data.getSelectedData();
     nans = isnan(d);
     if any(any(nans))
         warning('%d feature values were NaN and have been replaced with 0.',sum(sum(nans)));
@@ -91,8 +134,8 @@ function params = train(data,params)
         % quickPLSR is based on MATLAB code and cannot be distributed
         % due to copyright
         % use this slower alternative instead
-        b = zeros(size(d,2)+1,params.nComp);
-        for i = 1:params.nComp
+        b = zeros(size(d,2)+1,nComp);
+        for i = 1:nComp
             [~,~,~,~,beta] = plsregress(d,target,i);
             b(:,i) = beta;
         end
