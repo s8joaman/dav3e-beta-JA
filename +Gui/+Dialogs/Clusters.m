@@ -25,6 +25,7 @@ classdef Clusters < handle
         hTable
         normalizeCycleDurationButton
         deleteButton
+        plotButton
         applyButton
     end
     
@@ -42,6 +43,10 @@ classdef Clusters < handle
                 'String','Apply',...
                 'Callback',@(h,e)obj.applyButtonClicked);
             
+            obj.plotButton = uicontrol(layout,...
+                'String','plot tracks',...
+                'Callback',@(h,e)obj.plotButtonClicked);
+            
             obj.normalizeCycleDurationButton = uicontrol(layout,...
                 'String','normlaize all cycle durations',...
                 'Callback',@(h,e)obj.normalizeCycleDurationsButtonClicked);
@@ -49,7 +54,7 @@ classdef Clusters < handle
                 'String','delete...',...
                 'Callback',@(h,e)obj.deleteButtonClicked);
             
-            layout.Sizes = [-1,30,30,30];
+            layout.Sizes = [-1,30,30,30,30];
         end
 
         function tableDataChange(obj,rc,v)
@@ -87,6 +92,66 @@ classdef Clusters < handle
         
         function applyButtonClicked(obj)
             obj.refreshTable();
+        end
+        
+        function plotButtonClicked(obj)
+            for i=1:length(obj.main.project.clusters)
+                try
+                    coll(i) = obj.main.project.clusters(i, 1).track;
+                catch
+                    coll(i) = obj.main.project.clusters(1, i).track;
+                end
+            end
+            tracks = unique(coll);
+            X = 1:1:length(tracks);
+
+            % get cluster for individual track
+            for i=1:length(tracks)
+                k = 1;
+                for j=1:length(obj.main.project.clusters)
+                    try
+                        att = obj.main.project.clusters(j, 1);
+                    catch
+                        att = obj.main.project.clusters(1, j);
+                    end
+                    if strcmp(att.track,tracks(i))
+                        clust(i,k) = att;
+                        k = k+1;
+                    end
+                end
+            end
+
+            for i=1:size(clust,1)
+                sclust = clust(i,:);
+                b(1,1:4) = 0;
+                % create table and sort
+                for j=2:length(sclust)+1
+                    b(j,1)=sclust(1, j-1).offset;
+                    b(j,2)=sclust(1, j-1).samplingPeriod;
+                    b(j,3)=sclust(1, j-1).nCyclePoints;
+                    b(j,4)=sclust(1, j-1).nCycles;
+                end
+                b(any(isnan(b), 2),:) = [];
+                b = sortrows(b,1);
+                % create Y variable for plot
+                l=1;
+                Y(i,1) = 0;
+                for k=1:size(b,1)
+                    Y(i,l) = b(k,1)-sum(Y(i,1:(l-1)));
+                    Y(i,l+1) = b(k,2)*b(k,3)*b(k,4);
+                    l = l+2;
+                end
+            end
+            Y(:,1:2) = [];
+            figure;
+            H = barh(X,Y,'stacked');
+            yticklabels(tracks);
+            setB = 1:2:size(Y,2);
+            set(H(setB),'Visible','off');
+            set(gcf,'Position',[20,200,1500,200]);
+            if any(Y(:)<0)
+                error('At least two cluster of one track are not separated.');
+            end
         end
         
         function deleteButtonClicked(obj)
