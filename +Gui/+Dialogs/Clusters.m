@@ -130,6 +130,9 @@ classdef Clusters < handle
                     b(j,2)=sclust(1, j-1).samplingPeriod;
                     b(j,3)=sclust(1, j-1).nCyclePoints;
                     b(j,4)=sclust(1, j-1).nCycles;
+%                     timed(i,j-1)=sclust(1, j-1).creationDate+seconds(sclust(1, j-1).offset);
+                    timed(i,2*j-3)=datetime(sclust(1, j-1).offset, 'ConvertFrom', 'posixtime','TimeZone','Europe/Zurich');
+                    timed(i,2*j-2)=datetime((sclust(1, j-1).offset+b(j,2)*b(j,3)*b(j,4)), 'ConvertFrom', 'posixtime','TimeZone','Europe/Zurich');
                 end
                 b(any(isnan(b), 2),:) = [];
                 b = sortrows(b,1);
@@ -146,7 +149,15 @@ classdef Clusters < handle
             figure;
             H = barh(X,Y,'stacked');
             yticklabels(tracks);
+            xlabel('time');
+            title('"track" system');
             setB = 1:2:size(Y,2);
+            for i=1:size(Y,2)/2
+%                 datn(i*2-1) = ("offset "+num2str(i));
+                datn(i*2) = ("cluster "+num2str(i));
+            end
+            legend(datn);
+            legend('Location','bestoutside')
             set(H(setB),'Visible','off');
             set(gcf,'Position',[20,200,1500,200]);
             if any(Y(:)<0)
