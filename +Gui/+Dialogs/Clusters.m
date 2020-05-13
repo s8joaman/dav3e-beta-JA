@@ -95,6 +95,7 @@ classdef Clusters < handle
         end
         
         function plotButtonClicked(obj)
+            % get the number and captions of tracks
             for i=1:length(obj.main.project.clusters)
                 try
                     coll(i) = obj.main.project.clusters(i, 1).track;
@@ -105,7 +106,7 @@ classdef Clusters < handle
             tracks = unique(coll);
             X = 1:1:length(tracks);
 
-            % get cluster for individual track
+            % get clusters for individual track
             for i=1:length(tracks)
                 k = 1;
                 for j=1:length(obj.main.project.clusters)
@@ -120,49 +121,51 @@ classdef Clusters < handle
                     end
                 end
             end
-
+            
+            % get time information of clusters
             for i=1:size(clust,1)
                 sclust = clust(i,:);
-                b(1,1:4) = 0;
-                % create table and sort
                 for j=2:length(sclust)+1
-                    b(j,1)=sclust(1, j-1).offset;
-                    b(j,2)=sclust(1, j-1).samplingPeriod;
-                    b(j,3)=sclust(1, j-1).nCyclePoints;
-                    b(j,4)=sclust(1, j-1).nCycles;
-%                     timed(i,j-1)=sclust(1, j-1).creationDate+seconds(sclust(1, j-1).offset);
-                    timed(i,2*j-3)=datetime(sclust(1, j-1).offset, 'ConvertFrom', 'posixtime','TimeZone','Europe/Zurich');
-                    timed(i,2*j-2)=datetime((sclust(1, j-1).offset+b(j,2)*b(j,3)*b(j,4)), 'ConvertFrom', 'posixtime','TimeZone','Europe/Zurich');
-                end
-                b(any(isnan(b), 2),:) = [];
-                b = sortrows(b,1);
-                % create Y variable for plot
-                l=1;
-                Y(i,1) = 0;
-                for k=1:size(b,1)
-                    Y(i,l) = b(k,1)-sum(Y(i,1:(l-1)));
-                    Y(i,l+1) = b(k,2)*b(k,3)*b(k,4);
-                    l = l+2;
+%                     timed(i,2*j-3)=sclust(1, j-1).creationDate+seconds(sclust(1, j-1).offset);
+%                     timed(i,2*j-2)=sclust(1, j-1).creationDate+seconds(sclust(1, j-1).offset)+seconds(sclust(1, j-1).samplingPeriod*sclust(1, j-1)*sclust(1, j-1).nCycles*sclust(1, j-1).nCyclePoints);  
+%                     timed(i,2*j-3)=datetime(sclust(1, j-1).offset, 'ConvertFrom', 'posixtime','TimeZone','Europe/Zurich');
+%                     timed(i,2*j-2)=datetime((sclust(1, j-1).offset+sclust(1, j-1).samplingPeriod*sclust(1, j-1).nCycles*sclust(1, j-1).nCyclePoints), 'ConvertFrom', 'posixtime','TimeZone','Europe/Zurich');
+                    timed(i,2*j-3)=sclust(1, j-1).offset;
+                    timed(i,2*j-2)=(sclust(1, j-1).offset+sclust(1, j-1).samplingPeriod*sclust(1, j-1).nCycles*sclust(1, j-1).nCyclePoints);
+                    cap(i,j-1) = sclust(1, j-1).caption;
                 end
             end
-            Y(:,1:2) = [];
+            
+            % plot clusters
             figure;
-            H = barh(X,Y,'stacked');
-            yticklabels(tracks);
+            yfill=[0.75,0.75,1.25,1.25];
+            for j=1:size(timed,1)
+                for i=1:(size(timed,2)/2)
+                    sec(i,1) = timed(j,i*2-1);
+                    sec(i,2) = timed(j,i*2);
+                    sec(i,3) = timed(j,i*2);
+                    sec(i,4) = timed(j,i*2-1);
+                    if ~any(isnan(sec(i,:))) 
+                        f=fill(sec(i,:),yfill,rand(1,3));
+                        hold on;
+                    end
+%                     if ~any(isnat(sec(i,:))) 
+%                         f=fill(sec(i,:),yfill,rand(1,3));
+%                         hold on;
+%                     end
+                end
+                yfill=yfill+1;
+            end
+            xlim([0, max(xlim)])
+            ylim([0 j+1]);
+            yticks(0:1:(j+1));
+            yticklabels(['', tracks]);
             xlabel('time');
             title('"track" system');
-            setB = 1:2:size(Y,2);
-            for i=1:size(Y,2)/2
-%                 datn(i*2-1) = ("offset "+num2str(i));
-                datn(i*2) = ("cluster "+num2str(i));
-            end
-            legend(datn);
-            legend('Location','bestoutside')
-            set(H(setB),'Visible','off');
             set(gcf,'Position',[20,200,1500,200]);
-            if any(Y(:)<0)
-                error('At least two cluster of one track are not separated.');
-            end
+            cap = strrep(cap,'_','-');
+            legend(reshape(cap',numel(cap),1),'Location','bestoutside');
+            hold off;
         end
         
         function deleteButtonClicked(obj)
