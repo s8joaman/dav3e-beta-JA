@@ -72,7 +72,7 @@ helpVar = data.trainingSelection;
     %% Wahl Kriterium
     if strcmp(this.criterion, 'Elbow')
         y = err.validation(end,:);
-        x = 1:1:(min([numel(this.rank), 300]));
+        x = 1:1:(numel(this.rank));
         p1 = [x(1),y(1)];
         p2 = [x(end),y(end)];
         dpx = p2(1) - p1(1);
@@ -93,7 +93,7 @@ helpVar = data.trainingSelection;
         ind(ind>(minErr+err.stdValidation(row1(1),col1(1))))=true;
         ind = logical(ind);
 
-        matrix=(1:1:(min([numel(this.rank),300]))).*double(1:1:this.nComp)';
+        matrix=(1:1:(numel(this.rank))).*double(1:1:this.nComp)';
         matrix(ind)=NaN;
         minMatrix = min(matrix(:));
         [idxnComp,idx] = find(matrix==minMatrix);
@@ -134,7 +134,7 @@ helpVar = data.trainingSelection;
         this.projectedData.errorTest = sqrt(mean((predTe-data.target(data.testingSelection)).^2)); % compute RMSE for testing
         this.projectedData.errorVal = err.validation(idxnComp,this.nFeat);
         % train PLSR on testing data for trend of testing error (errorTrVaTe) 
-        for i=1:min([numel(this.rank),300])
+        for i=1:(numel(this.rank))
             [ptest] = class.train(data,params,rank(1:i));
 %             if idxnComp > length(ptest.offset)
 %                 xnComp = length(ptest.offset);
@@ -163,7 +163,7 @@ helpVar = data.trainingSelection;
         this.projectedData.errorTest = sqrt(mean((predTe-data.target(data.testingSelection)).^2)); % compute RMSE for testing
         this.projectedData.errorVal = err.validation(this.nFeat);
         % train PLSR on testing data for trend of testing error (errorTrVaTe) 
-        for i=1:min([numel(this.rank),300])
+        for i=1:(numel(this.rank))
             [ptest] = class.train(data,params,rank(1:i));
             predTe = predict(ptest.mdl,tar(:,rank(1:i)));
             errTest(i) = sqrt(mean((predTe-data.target(data.testingSelection)).^2));
