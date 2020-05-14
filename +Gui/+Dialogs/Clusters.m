@@ -156,7 +156,6 @@ classdef Clusters < handle
                 end
                 yfill=yfill+1;
             end
-            xlim([0, max(xlim)])
             ylim([0 j+1]);
             yticks(0:1:(j+1));
             yticklabels(['', tracks]);
